@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document Chatbot</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        .chat-container {
+            max-width: 800px;
+            margin: 50px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        .chat-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .chat-box {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            height: 300px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+            background-color: #f1f1f1;
+        }
+        .chat-message {
+            margin-bottom: 10px;
+        }
+        .chat-message.user {
+            text-align: right;
+        }
+        .chat-message.bot {
+            text-align: left;
+        }
+        .file-upload {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container chat-container">
+        <h1 class="chat-header">Document Chatbot</h1>
+
+        <!-- File Upload -->
+        <div class="file-upload">
+            <h5>Step 1: Upload a PDF</h5>
+            <form id="uploadForm" class="d-flex">
+                <input class="form-control me-2" type="file" name="file" accept="application/pdf" required />
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+            <div id="uploadMessage" class="mt-3 text-success"></div>
+        </div>
+
+        <!-- Chat Box -->
+        <h5>Step 2: Chat with the Bot</h5>
+        <div class="chat-box" id="chatBox">
+           
+        </div>
+
+  
+        <form id="chatForm" class="d-flex">
+            <input type="text" id="question" class="form-control me-2" placeholder="Type your question..." required />
+            <input type="hidden" id="contextFile" />
+            <button type="submit" class="btn btn-success">Send</button>
+        </form>
+    </div>
+
+   
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <script>
+        document.getElementById('uploadForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const formData = new FormData(e.target);
+            const response = await fetch('/upload', { method: 'POST', body: formData });
+            const result = await response.json();
+            const message = result.message || result.error;
+            document.getElementById('uploadMessage').textContent = message;
+
+            if (result.text_file) {
+                document.getElementById('contextFile').value = result.text_file;
+            }
+        };
+
+        document.getElementById('chatForm').onsubmit = async (e) => {
+            e.preventDefault();
+            const question = document.getElementById('question').value;
+            const contextFile = document.getElementById('contextFile').value;
+
+            const response = await fetch('/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, context_file: contextFile }),
+            });
+
+            const result = await response.json();
+            const message = result.answer || result.error;
+
+            //  conversation in the chat box
+            const chatBox = document.getElementById('chatBox');
+            const userMessage = `<div class="chat-message user"><strong>You:</strong> ${question}</div>`;
+            const botMessage = `<div class="chat-message bot"><strong>Bot:</strong> ${message}</div>`;
+            chatBox.innerHTML += userMessage + botMessage;
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            document.getElementById('question').value = '';
+        };
+    </script>
+</body>
+</html>
